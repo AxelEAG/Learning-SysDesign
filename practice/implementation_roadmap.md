@@ -24,7 +24,7 @@ Build a simple REST API with a database:
 👉 _Outcome_: you can deploy and test a working app locally.
 
 ---
-### **Stage 1: Horizontal Scaling 
+### **Stage 1: Horizontal Scaling** 
 
 Now, make that small app _scale out_.
 #### 🎯 Goals
