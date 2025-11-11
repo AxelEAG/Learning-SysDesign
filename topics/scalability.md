@@ -1,41 +1,43 @@
-Based on [Harvard's CS75 Scalability Lecture](https://www.youtube.com/watch?v=-W9F__D3oY4)
+Based on [Harvard's CS75 Scalability Lecture](https://www.youtube.com/watch?v=-W9F__D3oY4) of the series _Building Dynamic Websites_  by David J. Malan
+
+_For more concepts and definitions can look at the other docs in the folder._
 
 What if your service quickly grows in popularity? How would you handle that?
 **Answer:** Scalability
-	- **Vertical scaling:** increase resources of the server / machine (CPU, RAM, Disk, etc.). 
-		- Benefits: simplest approach, works great for small scale .
-		- Cons: limits on how good one machine can be or affordability.
-	- **Horizontal scaling:** increase machines / servers and distribute tasks among them
-		-  Benefits: Cheaper, much higher capacity for expansion.
-		-  Cons: Higher complexity - need to coordinate everything.
-	- 
 
-Notes (In Progress)
+Scaling a service can take many forms, and often times, it is about repeating a same idea at different magnitudes. Further, any change comes with its ups and downsides. This lecture will explore an overview of all of this.
 
 **Vertical Scaling** (7:30 - 13:30)
-Vertical scaling consists of increasing resources (CPU, RAM, Disk, etc.) of the server or machine in use.
-- **Upsides:**
-- **Downsides:**
+The first line of defense thanks to its simplicity is vertical scaling. It consists of increasing resources (CPU, RAM, Disk, etc.) of the server or machine in use.
+- **Pros:** 
+	- It's the simplest approach - no need to redesign the system.
+	- Works great for small to medium scale.
+- **Cons:** 
+	- Limited by cost and hardware limits — one machine can only get so powerful.
+    - Hardware upgrades may require downtime.
 
-Disk  - PATA, SATA, SAS, RAID
-rpms and meaning? inside disks there's a disk that spins
-dbs write to disk so it helps to read and write faster
-solid state drive - faster electrically than mechanical
-RAM 
-
-actually schedules tasks and does them in order - serially vs parallel
-multiple threads / processes?
-we don't know what to do with resources?
+Increasing resources may look like:
+	 - **CPU:** 
+		 - Adding cores: It can handle more threads/processes in parallel.
+		 - Increasing clock speed: each core can execute instructions faster.
+	 - **RAM:** 
+		 - Increasing memory allows more data to be accessed more readily than from disk.
+	 - **Disk:**
+		 - Increasing RPMs, which equates to faster reads and writes.
+		 - Hard vs solid state drive
+		 - Improving interfaces: SAS (Serial Attached SCSI) > SATA (Serial ATA)> PATA (Parallel ATA)
 
 **Horizontal scaling** (13:30 - 15:00)
-HTTP 
-DNS - Domain Name System - Translates host names to IPs
-IP addresses? public vs private - review other lectures? others cannot address them or cannot be contacted by enemies. 
-TCP
-TTL - Time to live
-nslookup command
-Also, world kinda running out of Ip Addresses - look up
+As mentioned, vertical scaling runs into some heavy hardware limitations. So, to bypass that, horizontal scaling can be used. In short, it consists of increasing machines or servers and distributing tasks among them.
+- **Pros:** 
+	- Can use cheaper hardware.
+	- Higher expansion capacity - can always add more servers.
+- **Cons:** 
+	- Higher complexity - need to coordinate all services.
+	- Data needs to be consistent too.
+	- Communication between servers adds latency
 
+To address how this coordination between servers may occur, new components need to be added. Among the most common ones is the load balancer.
 
 **Load balancing:** (15:00 - 29:00)
 	allows to distribute / balance the traffic load to the servers
@@ -81,7 +83,7 @@ shared storage tech ([42:00](https://www.youtube.com/watch?v=-W9F__D3oY4&t=2520s
 Actual data centers servers
 have multiple hard drives, ram, and power supplies (can pull it out and put a new one in)
 
-Shared state - FC, iSCSI, MySQL, NFS,
+**Shared state** - FC, iSCSI, MySQL, NFS,
 cookies? - store which server to get in - what if it's down, still could cause unbalanced load to one server, 
 what if IP changes and have to make IP public store key instead have actual IP on load balancer
 
@@ -93,11 +95,86 @@ Database replication (43:00 - 44:00 &)
 Have copies of the servers!
 Replication
 
-Caching (53:00 -)
+**Caching (53:00 -)**
 .html - straight up save the whole compiled code / static content and spit it out. Web servers are pretty good at this. Downside: storing a lot of space and memory. Lots of repeated stuff. To change something have to change everything - have to replace or regenerate tens of thousands of files.
 
 MYSQL query cache - saves queries results and gives them back
-memcached - (1:00:00)
+
+**memcached - (1:00:00)**
+mechanism that stores whatever you want in RAM
+
+key-value storage mechanism that caches into RAM
+
+issue: what if it's full? / run out of RAM
+garbage collection - least recently used
+or expire objects
+
+
+optimizing mySQL
+
+myISAM - full table locks
+InnoDB - supports transactions
+
+storage engine - underlying format to store DB data
+
+**Replication (1:11-)**
+Master-Slave - master where reads and writes are done, while slaves copy it
+	Pros: Have identical backups - redundancy. Can do reading from slaves
+	Cons: Slower writes and single point of failure for writes (when master fails)
+Master-Master - can write on either, copy it on the other, slaves copy it all.
+	Pros: 
+	Cons:
+
+1:16-1:21
+Load-balancing + replication: 
+Client -> Load Balancer -> Web Servers 
+	-> read queries -> Load Balancer -> MySQL Slaves
+	-> write queries -> MySQL Master -> Replication on Slaves
+
+
+Web servier tiers
+Multi tier architecture
+
+Single points of failure - look at bottleneckes
+Load balancing: Active: active
+send heart beats - if one stops hearing them, other gets in charge
+active: passive - detects no more heart beats from active, replace it
+
+**Partitioning** (1:21 -1:24)
+have different server for each school (for facebook)
+Scale horizontally
+catch: what if wants to connect between networks?
+common in DBs
+balance load on high level info
+
+High Availability - service checking on the other and can take on the whole load if one fails
+
+
+Ensuring you not only have scalability, but redundancy, higher probabilities of uptime, resilience against failure,
+
+(1:33 - 1:39)
+Data center redundancy - the whole thing could go down
+	how to distribute load?
+	DNS! Geography based load balancing
+	CDN
+
+Same ideas at different scales
+
+**Security** 1:40-1:45
+Outside to data center
+tcp:40, 443
+SSL
+SSH:22, SSL VPN,
+
+data center to LBs: Only data center
+unencrypted - faster
+web server to DB: SQL Queries - TCP 3306 (MySQL port number)
+
+Firewall?
+Networking concepts
+Principle of least priviledge - only have doors that people should have access to
+
+
 
 
 
