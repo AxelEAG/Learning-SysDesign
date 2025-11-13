@@ -1,3 +1,5 @@
+### **Scalability**
+
 Based on [Harvard's CS75 Scalability Lecture](https://www.youtube.com/watch?v=-W9F__D3oY4) of the series _Building Dynamic Websites_  by David J. Malan
 
 _For more concepts and definitions can look at the other docs in the folder._
@@ -7,7 +9,8 @@ What if your service quickly grows in popularity? How would you handle that?
 
 Scaling a service can take many forms, and often times, it is about repeating a same idea at different magnitudes. Further, any change comes with its ups and downsides. This lecture will explore an overview of all of this.
 
-**Vertical Scaling** (7:30 - 13:30)
+### **Vertical Scaling** (7:30 - 13:30)
+
 The first line of defense thanks to its simplicity is vertical scaling. It consists of increasing resources (CPU, RAM, Disk, etc.) of the server or machine in use.
 - **Pros:** 
 	- It's the simplest approach - no need to redesign the system.
@@ -27,8 +30,9 @@ Increasing resources may look like:
 		 - Hard vs solid state drive
 		 - Improving interfaces: SAS (Serial Attached SCSI) > SATA (Serial ATA)> PATA (Parallel ATA)
 
-**Horizontal scaling** (13:30 - 15:00)
-As mentioned, vertical scaling runs into some heavy hardware limitations. So, to bypass that, horizontal scaling can be used. In short, it consists of increasing machines or servers and distributing tasks among them.
+### **Horizontal scaling** (13:30 - 15:00)
+
+As mentioned, vertical scaling runs into some heavy hardware limitations. So, to bypass that, horizontal scaling can be used. In short, it consists of increasing the number of machines or servers and distributing tasks among them.
 - **Pros:** 
 	- Can use cheaper hardware.
 	- Higher expansion capacity - can always add more servers.
@@ -37,37 +41,92 @@ As mentioned, vertical scaling runs into some heavy hardware limitations. So, to
 	- Data needs to be consistent too.
 	- Communication between servers adds latency
 
-To address how this coordination between servers may occur, new components need to be added. Among the most common ones is the load balancer.
+So this seems to be very beneficial to scaling, but, how may one go about coordinating such servers? Among the most common solutions, it's the load balancer.
 
-**Load balancing:** (15:00 - 29:00)
-	allows to distribute / balance the traffic load to the servers
-	Open to the public / client
-	Decides who to send it to - what are the strategies?
-		Round Robin - 
-			BIND example - have multiple sequential IP addresses, so by default it would return one after another upon requests
-			downside - by pure luck one server could get overloaded. Caching can store much more than necessary
-		Dedicated servers - by tasks / available uses
-		Busyness
-		Load? Busiest to least busy
-	Sends request to server and receives a response
-	Sends response back into the client
+### **Load balancing** (15:00 - 29:00)
 
-Load balancing tech (44:00 - )
-Software: ELB, HAProxy, LVS
-Hardware: Barracuda, Cisco, Citrix, F5
+A **load balancer** is a type of **reverse proxy** that distributes incoming client requests across servers to prevent any single one to become overloaded. It acts as the entry point for the public, hiding and protecting the backend servers from direct user access.
 
-**Shared session state** (29:00-34:00)
+**How load balancers work**
 
-Load balancing breaks session state,
-how to solve? Sessions are typically implemented per server. How to share it?
-store session state somewhere else, not on the server
-what if this somewhere else breaks?
-solved shared state but sacrificed robustness / redundancy
+When a client sends a request, it reaches the load balancer first. It then decides which server should handle the request based on some balancing strategy. It then forwards the request to the server, receives the response, and routes it back to the client.
+
+In this way, the load balancer:
+* Improves performance by distributing the workload.
+* Increases reliability and availability (if one server goes down, traffic can be rerouted).
+* Enhances security by isolating the backend servers from direct access.
+
+**Common load balancing strategies**
+- **Round Robin** – The simplest strategy: requests are distributed sequentially across servers.
+    - _Pros:_ Easy to implement and works well for servers of similar capacities.
+    - _Cons:_ Doesn’t account for server load — one server might get overwhelmed.
+
+- **Least Connections / Least Load** – Sends traffic to the server currently handling the fewest active connections or least load.
+    - _Pros:_ Adapts to server usage.
+    - _Cons:_ Requires real-time monitoring, which adds overhead.
+
+- **Hashing (e.g., IP Hash)** – Hashes the client IP or session ID to route them to the same server.
+    - _Pros:_ Good for session persistence (“sticky sessions”).
+    - _Cons:_ Uneven distribution if hash space isn’t balanced.
+
+- **Weighted Round Robin / Weighted Least Connections** – Assigns weights to servers based on capacity (e.g., CPU, RAM), sending more requests to stronger machines.
+    - _Pros:_ Makes efficient use of the stronger servers.
+    - _Cons:_ Requires careful tuning of weights.
+    
+- **Task-Based Routing (Functional Partitioning)** – Has dedicated servers for tasks and routes requests accordingly.    
+    - _Pros:_ Specialization improves efficiency.
+    - _Cons:_ More complex architecture; each tier must scale independently.
+
+**Load Balancing Technologies** (44:00 - 45:00)
+Load balancers can be **software-based** or **hardware-based**.
+- **Software Load Balancers**
+    - **HAProxy** – Open-source, high-performance TCP/HTTP load balancer widely used in production.
+    - **LVS (Linux Virtual Server)** – Kernel-level load balancing for large clusters.
+    - **ELB (Elastic Load Balancer)** – AWS-managed load balancer that automatically scales and integrates with cloud services.
+- **Hardware Load Balancers**
+    - **F5**, **Citrix**, **Cisco**, **Barracuda**, and others provide specialized devices optimized for high throughput and security.
+
+When we add a load balancer and multiple servers, a new problem shows up: **session state**. 
+That is, as traffic is distributed to different servers, how can the session state be kept?
+
+### **Shared session state** (29:00-34:00)
+
+A **session** keeps track of information about a user across multiple requests (like whether they’re logged in, what’s in their cart, or what page they were on).
+
+Normally, this data is stored **in memory on the server** that the user’s request hits. So, with a single server this is fine. But oncer there are multiple servers behind a load balancer, a user’s next request might go to a _different_ server — one that doesn’t have their session data. So, suddenly, all their new data might seem to disappear.
+
+**How to solve it**
+There are a few main ways to handle shared session state:
+1. **Stickiness (Session Affinity):** Keep sending the same user to the same server.
+	* **How:** The load balancer can track users by IP, or store a session ID in a **cookie** that points to a specific server.
+	- **Pros:** Simple and fast as there's no need to share session data.
+	- **Cons:** If that server goes down, the session is lost. It can also cause uneven load (some servers may get more users or 'power' users that store a lot).
+2. **Centralized Session Store:** Store sessions in a shared database or cache.    
+    - **How:** Can use any of the following tools.
+	    - **Databases:** MySQL, PostgreSQL.
+	    - **Caches:** Redis, Memcached.
+	    - **File Systems:** NFS (Network File System), iSCSI, Fibre Channel (FC).    
+	- **Pros:** Any server can retrieve a user’s session so no need to distribute to the 'correct' one.
+	- **Cons:** The session store itself becomes a **single point of failure**. 
+3. **Client-Side Sessions:** Store session data directly on the client, instead of the server.
+	* **How:** Put the session info directly in the user’s **cookie** (often as a token or encrypted blob).
+	- **Pros:** No need for shared storage (stateless servers).
+	- **Cons:** Can’t store much data; must be secure (never trust client input); and every request carries that data around, increasing network overhead.
+
+Despite there being multiple solutions, one can see again the pattern of them having upsides and downsides. A single point of failure is a big one. But, what if one could add more servers or databases? 
+
+That is, one can fix that with **replication** or **redundancy**, but that adds complexity. So, in the next section this will be explored for the centralized session, and how to add replication or redundancy.
+
+
 
 Redundancy
 uptime if everything breaks
 
 **Redundant Array of Independent Disks (RAID)** (34:00 - 40:30)
+
+What's redundancy or replication
+
+What's RAID
 Variants - assume multiple hard drives
 RAID0 - 2 hard drives of identical size, striping data between them to allow faster writing, but only get the size of 1
 RAID1 - 2 hard drives, but mirror data, performance overhead but now have redundancy
@@ -82,13 +141,6 @@ There's still issues:
 shared storage tech ([42:00](https://www.youtube.com/watch?v=-W9F__D3oY4&t=2520s)) 
 Actual data centers servers
 have multiple hard drives, ram, and power supplies (can pull it out and put a new one in)
-
-**Shared state** - FC, iSCSI, MySQL, NFS,
-cookies? - store which server to get in - what if it's down, still could cause unbalanced load to one server, 
-what if IP changes and have to make IP public store key instead have actual IP on load balancer
-
-It's still a single point of failure 
-How to share state?
 
 Database replication (43:00 - 44:00 &)
 
