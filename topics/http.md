@@ -77,7 +77,57 @@ can also be
 	CName: Canonical name, uses an alias domain name - to domain name
 	Mx: Mail exchange record - mail server - ip address. Can have many and that go by priorities 
 	
-	
+
+
+web hosting companies
+	how can they promise so much?
+	they separate virtually a same server or other resources
+	gotchas
+		what if machine crasahes
+		contention for resources
+		don't promise unlimited uptimed - will probably crash a lot
+
+it's shared and managed by other people
+
+Virtual Private Servers - get a dedicated server (or an illusion. With virtualization)
+hypervisors
+resource contention
+gain control over the server
+they also have access to the machine though
+	they can change passowrd or have access through single file mode
+	or also can physically delete the password
+
+appliances - what are they
+
+ssh - secure shell: connect to a remote server and execute commands
+
+sftp - file transfer protocol
+
+dhcp - dynamic host configuration protocol
+
+
+/search?q=harvard
+q - http parameter - input to a webserver that generally comes from a form / javascript
+? - start of parameters
+& - multiple parameters
+
+lamp - linux apache mysql php
+
+tcp socket
+
+responses
+200s - success
+300s - redirects
+400s - client errors
+500s - server errors
+
+nslookup for DNS IP lookups
+
+/etc/hosts - text file that maps the hosts ip addresses for domain names
+leaking cookies when using htpp - dangerous as it can be listened by others in the same network and used to enter other pages with
+your same session (session hijacking)
+
+can tinker with the website by modifying it in-line on the brwoser by inspecting elements
 
 **Topics**
 DNS
